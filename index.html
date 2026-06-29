@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOWATCH — Access Page Prototype</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 32px 16px; }
+
+  .prototype-wrap { width: 100%; max-width: 780px; }
+  .proto-label { font-size: 11px; color: rgba(255,255,255,0.25); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 12px; text-align: center; }
+
+  .scene { background: #1a1a1a; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+
+  /* Header */
+  .page-header { padding: 22px 24px 16px; border-bottom: 0.5px solid rgba(255,255,255,0.08); }
+  .page-title { font-size: 22px; font-weight: 500; color: #fff; margin-bottom: 3px; }
+  .page-sub { font-size: 13px; color: rgba(255,255,255,0.35); }
+
+  /* Search + filters */
+  .search-action-row { display: flex; align-items: center; gap: 8px; padding: 14px 24px 0; }
+  .search-row { flex: 1; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.14); border-radius: 9px; padding: 10px 14px; transition: border-color 0.15s; }
+  .search-row:focus-within { border-color: rgba(255,255,255,0.3); }
+  .search-row i { font-size: 16px; color: rgba(255,255,255,0.3); flex-shrink: 0; }
+  .search-row input { flex: 1; background: transparent; border: none; outline: none; font-size: 14px; color: #fff; }
+  .search-row input::placeholder { color: rgba(255,255,255,0.25); }
+  .clear-btn { font-size: 15px; color: rgba(255,255,255,0.25); cursor: pointer; display: none; flex-shrink: 0; }
+  .clear-btn:hover { color: rgba(255,255,255,0.6); }
+
+  .filter-area { padding: 10px 24px 14px; border-bottom: 0.5px solid rgba(255,255,255,0.08); display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 0.5px solid rgba(255,255,255,0.13); background: transparent; color: rgba(255,255,255,0.4); cursor: pointer; white-space: nowrap; transition: all 0.12s; display: inline-flex; align-items: center; gap: 5px; }
+  .chip:hover { border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.7); }
+  .chip.active { border-color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.08); color: #fff; }
+  .chip.limited-active { border-color: #c084fc; background: rgba(192,132,252,0.1); color: #c084fc; }
+  .chip i { font-size: 12px; }
+  .sub-filter-row { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; padding-top: 0; border-top: 0.5px solid rgba(255,255,255,0.08); overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.22s ease, opacity 0.22s ease, padding-top 0.22s ease, margin-top 0.22s ease; }
+  .sub-filter-row.open { max-height: 60px; opacity: 1; padding-top: 8px; margin-top: 2px; }
+  .sub-label { font-size: 11px; color: rgba(255,255,255,0.25); align-self: center; white-space: nowrap; }
+
+  /* Section headers */
+  .section-head { display: flex; align-items: center; gap: 10px; padding: 13px 24px; cursor: pointer; user-select: none; transition: background 0.1s; }
+  .section-head:hover { background: rgba(255,255,255,0.025); }
+  .chevron { font-size: 14px; color: rgba(255,255,255,0.3); transition: transform 0.2s; flex-shrink: 0; }
+  .chevron.closed { transform: rotate(-90deg); }
+  .section-title { font-size: 15px; font-weight: 500; color: #fff; flex: 1; }
+  .section-meta { font-size: 12px; color: rgba(255,255,255,0.3); display: flex; align-items: center; gap: 5px; }
+  .req-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.35); flex-shrink: 0; }
+  .btn-section { font-size: 12px; padding: 7px 13px; border-radius: 8px; border: 0.5px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.07); color: #fff; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; font-weight: 500; transition: background 0.12s; flex-shrink: 0; }
+  .btn-section:hover { background: rgba(255,255,255,0.13); }
+  .btn-section i { font-size: 14px; }
+
+  /* Section body */
+  .section-body { border-top: 0.5px solid rgba(255,255,255,0.07); }
+  .section-body.collapsed { display: none; }
+  .section-divider { height: 0.5px; background: rgba(255,255,255,0.07); }
+
+  /* Requests block */
+  .req-block { margin: 10px 16px; background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 14px; }
+  .req-block-label { font-size: 10px; color: rgba(255,255,255,0.25); margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .req-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+  .req-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .req-info { flex: 1; min-width: 0; }
+  .req-email { font-size: 13px; color: rgba(255,255,255,0.75); }
+  .req-meta { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 2px; }
+  .req-btn { font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 0.5px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.6); cursor: pointer; white-space: nowrap; }
+  .req-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+  .req-btn.accept { border-color: rgba(255,255,255,0.3); color: #fff; }
+
+  /* Entries */
+  .entry { display: flex; align-items: center; gap: 12px; padding: 11px 24px; border-top: 0.5px solid rgba(255,255,255,0.06); transition: background 0.1s; }
+  .entry:hover { background: rgba(255,255,255,0.02); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+  .av-v { background: #2d6a4f; color: #95d5b2; }
+  .av-t { background: #7b2d8b; color: #e0aaff; }
+  .av-t2 { background: #1d4e89; color: #74b0f4; }
+  .av-y { background: #6d4c00; color: #ffd166; }
+  .av-j { background: #4a3000; color: #e8b96a; }
+  .av-b { background: #1a3a2a; color: #7ecba0; }
+  .av-ti { background: #5c2d91; color: #d9b3ff; }
+  .entry-body { flex: 1; min-width: 0; }
+  .entry-name { font-size: 13px; font-weight: 500; color: #fff; }
+  .entry-name span { font-weight: 400; color: rgba(255,255,255,0.35); }
+  .entry-meta { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .limited-link { color: rgba(255,255,255,0.6); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; cursor: pointer; }
+  .limited-link:hover { color: #fff; }
+  .entry-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .status { font-size: 11px; white-space: nowrap; }
+  .expiring { color: #f4a261; }
+  .pending-s { color: rgba(255,255,255,0.3); }
+  .act-btn { font-size: 12px; padding: 5px 11px; border-radius: 6px; border: 0.5px solid rgba(255,255,255,0.16); background: transparent; color: #fff; cursor: pointer; white-space: nowrap; }
+  .act-btn:hover { border-color: rgba(255,255,255,0.35); }
+  .icon-btn { width: 28px; height: 28px; border-radius: 6px; background: transparent; border: none; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.2); font-size: 14px; cursor: pointer; transition: color 0.1s; }
+  .icon-btn:hover { color: rgba(255,255,255,0.55); }
+  .highlight { background: rgba(255,220,100,0.2); border-radius: 2px; color: #fff; }
+
+  /* Empty state */
+  .empty { padding: 40px 24px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.25); display: none; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; align-items: flex-end; justify-content: center; padding: 0; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #242424; border-radius: 16px 16px 0 0; border-top: 0.5px solid rgba(255,255,255,0.12); width: 100%; max-width: 780px; padding-bottom: 24px; }
+  .modal-handle { width: 36px; height: 4px; border-radius: 99px; background: rgba(255,255,255,0.12); margin: 12px auto 0; }
+  .modal-header { display: flex; align-items: center; gap: 12px; padding: 16px 22px 12px; border-bottom: 0.5px solid rgba(255,255,255,0.08); }
+  .modal-info { flex: 1; }
+  .modal-name { font-size: 16px; font-weight: 500; color: #fff; }
+  .modal-email { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 1px; }
+  .modal-close { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 15px; border: none; }
+  .modal-close:hover { background: rgba(255,255,255,0.12); }
+  .modal-section-label { font-size: 11px; color: rgba(255,255,255,0.3); padding: 14px 22px 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .modal-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 22px; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+  .modal-row:last-of-type { border-bottom: none; }
+  .modal-row-left { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .modal-row-left i { font-size: 16px; color: rgba(255,255,255,0.35); }
+  .row-on { color: #fff; }
+  .row-off { color: rgba(255,255,255,0.2); }
+  .check-on { color: rgba(255,255,255,0.65); font-size: 16px; }
+  .check-off { color: rgba(255,255,255,0.12); font-size: 16px; }
+  .modal-footer { padding: 14px 22px 0; }
+  .modal-edit-btn { width: 100%; padding: 11px; font-size: 14px; border-radius: 9px; border: 0.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-weight: 500; }
+  .modal-edit-btn:hover { background: rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+
+<div class="prototype-wrap">
+  <div class="proto-label">NOWATCH · Access Page · Interactive Prototype</div>
+
+  <div class="scene">
+    <div class="page-header">
+      <div class="page-title">Access</div>
+      <div class="page-sub">Invite a NOWATCH email to access your dashboard; access is one-way.</div>
+    </div>
+
+    <div class="search-action-row">
+      <div class="search-row">
+        <i class="ti ti-search"></i>
+        <input type="text" id="search-input" placeholder="Search by name or email…" oninput="onSearch()" />
+        <i class="ti ti-x clear-btn" id="clear-btn" onclick="clearSearch()"></i>
+      </div>
+    </div>
+
+    <div class="filter-area" id="filter-area">
+      <div class="chip active" data-filter="all" onclick="setFilter('all',this)">All</div>
+      <div class="chip" data-filter="all-data" onclick="setFilter('all-data',this)">All data</div>
+      <div class="chip" data-filter="limited" onclick="setFilter('limited',this)">Limited access</div>
+      <div class="chip" data-filter="active" onclick="setFilter('active',this)">Active</div>
+      <div class="chip" data-filter="expiring" onclick="setFilter('expiring',this)">Expiring soon</div>
+      <div class="chip" data-filter="pending" onclick="setFilter('pending',this)">Pending</div>
+      <div class="sub-filter-row" id="sub-filter-row">
+        <span class="sub-label">Has access to:</span>
+        <div class="chip" data-cat="awake" onclick="setCat('awake',this)"><i class="ti ti-sun"></i> Awake</div>
+        <div class="chip" data-cat="sleep" onclick="setCat('sleep',this)"><i class="ti ti-moon"></i> Sleep</div>
+        <div class="chip" data-cat="heart" onclick="setCat('heart',this)"><i class="ti ti-heart"></i> Heart rate</div>
+        <div class="chip" data-cat="activity" onclick="setCat('activity',this)"><i class="ti ti-run"></i> Activity</div>
+        <div class="chip" data-cat="stress" onclick="setCat('stress',this)"><i class="ti ti-brain"></i> Stress</div>
+        <div class="chip" data-cat="custom" onclick="setCat('custom',this)"><i class="ti ti-tag"></i> Custom</div>
+      </div>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="section-head" onclick="toggleSection('s1')">
+      <i class="ti ti-chevron-down chevron" id="chev-s1"></i>
+      <span class="section-title">Can access your data</span>
+      <span class="section-meta">4 people <span class="req-dot"></span> 1 request</span>
+      <button class="btn-section" onclick="event.stopPropagation()"><i class="ti ti-share"></i> Share</button>
+    </div>
+    <div class="section-body" id="s1">
+      <div class="req-block" id="req-block-s1">
+        <div class="req-block-label">Requests</div>
+        <div class="req-row" data-name="vanessa" data-email="vanessa123@gmail.com" data-access="all-data" data-status="pending">
+          <div class="req-info">
+            <div class="req-email">vanessa123@gmail.com</div>
+            <div class="req-meta">14/12/24 – ongoing · Awake data · Weekdays only</div>
+          </div>
+          <button class="req-btn accept">Accept</button>
+          <button class="req-btn">Edit</button>
+          <button class="req-btn">Decline</button>
+        </div>
+      </div>
+      <div class="entry" data-section="give" data-name="vanessa" data-email="vanessa123@gmail.com" data-access="all-data" data-status="expiring" data-cats="awake,sleep,heart,activity,stress,custom">
+        <div class="avatar av-v">V</div>
+        <div class="entry-body">
+          <div class="entry-name"><span class="name-text">Vanessa</span> <span>(<span class="email-text">vanessa123@gmail.com</span>)</span></div>
+          <div class="entry-meta">14/12/24 – 28/12/24 · All data · Can export · Weekdays only</div>
+        </div>
+        <div class="entry-right">
+          <span class="status expiring">Expiring soon</span>
+          <button class="act-btn">Edit access</button>
+          <button class="icon-btn"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="entry" data-section="give" data-name="tina" data-email="tin@email.com" data-access="limited" data-status="pending" data-cats="awake,sleep">
+        <div class="avatar av-t">T</div>
+        <div class="entry-body">
+          <div class="entry-name"><span class="name-text">Tina</span> <span>(<span class="email-text">tin@email.com</span>)</span></div>
+          <div class="entry-meta">14/12/24 – 28/12/24 · <span class="limited-link" onclick="openModal('Tina','tin@email.com','awake,sleep')">Limited access</span> · Can export · Weekdays only</div>
+        </div>
+        <div class="entry-right">
+          <span class="status pending-s">Pending</span>
+          <button class="act-btn">Edit access</button>
+          <button class="icon-btn"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="entry" data-section="give" data-name="tom" data-email="tomtom@gmail.com" data-access="limited" data-status="active" data-cats="awake,heart,activity">
+        <div class="avatar av-t2">T</div>
+        <div class="entry-body">
+          <div class="entry-name"><span class="name-text">Tom</span> <span>(<span class="email-text">tomtom@gmail.com</span>)</span></div>
+          <div class="entry-meta">14/12/24 – 28/12/24 · <span class="limited-link" onclick="openModal('Tom','tomtom@gmail.com','awake,heart,activity')">Limited access</span> · Can export · Weekdays only</div>
+        </div>
+        <div class="entry-right">
+          <button class="act-btn">Edit access</button>
+          <button class="icon-btn"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="entry" data-section="give" data-name="youlija" data-email="yuli@gmail.com" data-access="all-data" data-status="active" data-cats="awake,sleep,heart,activity,stress,custom">
+        <div class="avatar av-y">Y</div>
+        <div class="entry-body">
+          <div class="entry-name"><span class="name-text">Youlija</span> <span>(<span class="email-text">yuli@gmail.com</span>)</span></div>
+          <div class="entry-meta">14/12/24 – 28/12/24 · All data · Can export · Weekdays only</div>
+        </div>
+        <div class="entry-right">
+          <button class="act-btn">Edit access</button>
+          <button class="icon-btn"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Section 2 -->
+    <div class="section-head" onclick="toggleSection('s2')">
+      <i class="ti ti-chevron-down chevron" id="chev-s2"></i>
+      <span class="section-title">Dashboards you can see</span>
+      <span class="section-meta">12 people <span class="req-dot"></span> 2 requests</span>
+      <button class="btn-section" onclick="event.stopPropagation()"><i class="ti ti-user-plus"></i> Request</button>
+    </div>
+    <div class="section-body" id="s2">
+      <div class="req-block" id="req-block-s2">
+        <div class="req-block-label">Requests</div>
+        <div class="req-row" data-name="joana" data-email="joana@gmail.com" data-access="all-data" data-status="pending">
+          <div class="req-info">
+            <div class="req-email">joana@gmail.com</div>
+            <div class="req-meta">14/12/24 – ongoing · All data · Weekdays only</div>
+          </div>
+          <button class="req-btn">Withdraw</button>
+        </div>
+        <div class="req-row" data-name="vanessa" data-email="vanessa123@gmail.com" data-access="all-data" data-status="pending">
+          <div class="req-info">
+            <div class="req-email">vanessa123@gmail.com</div>
+            <div class="req-meta">14/12/24 – ongoing · All data · Weekdays only</div>
+          </div>
+          <button class="req-btn">Withdraw</button>
+        </div>
+      </div>
+      <div class="entry" data-section="get" data-name="tom" data-email="tomtom@gmail.com" data-access="all-data" data-status="active" data-cats="awake,sleep,heart,activity,stress,custom">
+        <div class="avatar av-t2">T</div>
+        <div class="entry-body">
+          <div class="entry-name"><span class="name-text">Tom</span> <span>(<span class="email-text">tomtom@gmail.com</span>)</span></div>
+          <div class="entry-meta">14/12/24 – 28/12/24 · All data · Can export · Weekdays only</div>
+        </div>
+        <div class="entry-right">
+          <button class="act-btn">Request change</button>
+          <button class="icon-btn"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="entry" data-section="get" data-name="bob" data-email="bobby@gmail.com" data-access="all-data" data-status="active" data-cats="awake,sleep,heart,activity,stress,custom">
+        <div class="avatar av-b">B</div>
+        <div class="entry-body">
+          <div class="entry-name"><span class="name-text">Bob</span> <span>(<span class="email-text">bobby@gmail.com</span>)</span></div>
+          <div class="entry-meta">14/12/24 – 28/12/24 · All data · Weekdays only</div>
+        </div>
+        <div class="entry-right">
+          <button class="act-btn">Request change</button>
+          <button class="icon-btn"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="entry" data-section="get" data-name="tina" data-email="tintintin@gmail.com" data-access="limited" data-status="active" data-cats="awake,stress">
+        <div class="avatar av-ti">T</div>
+        <div class="entry-body">
+          <div class="entry-name"><span class="name-text">Tina</span> <span>(<span class="email-text">tintintin@gmail.com</span>)</span></div>
+          <div class="entry-meta">14/12/24 – 28/12/24 · <span class="limited-link" onclick="openModal('Tina','tintintin@gmail.com','awake,stress')">Limited access</span> · Can export · Weekdays only</div>
+        </div>
+        <div class="entry-right">
+          <button class="act-btn">Request change</button>
+          <button class="icon-btn"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty" id="empty-state">No results match your search or filters.</div>
+  </div>
+</div>
+
+<!-- Limited access modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="avatar" id="modal-avatar" style="width:36px;height:36px;font-size:14px;"></div>
+      <div class="modal-info">
+        <div class="modal-name" id="modal-name"></div>
+        <div class="modal-email" id="modal-email"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-section-label">Data categories</div>
+    <div id="modal-rows"></div>
+    <div class="modal-footer">
+      <button class="modal-edit-btn">Edit access</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var activeFilter = 'all';
+var activeCat = null;
+
+var allCategories = [
+  { key: 'awake',    icon: 'ti-sun',    label: 'Awake data' },
+  { key: 'sleep',    icon: 'ti-moon',   label: 'Sleep data' },
+  { key: 'heart',    icon: 'ti-heart',  label: 'Heart rate' },
+  { key: 'activity', icon: 'ti-run',    label: 'Activity / steps' },
+  { key: 'stress',   icon: 'ti-brain',  label: 'Stress levels' },
+  { key: 'custom',   icon: 'ti-tag',    label: 'Custom categories' },
+];
+
+var avatarColors = {
+  'T': { bg: '#7b2d8b', color: '#e0aaff' },
+  'V': { bg: '#2d6a4f', color: '#95d5b2' },
+  'B': { bg: '#1a3a2a', color: '#7ecba0' },
+  'Y': { bg: '#6d4c00', color: '#ffd166' },
+  'J': { bg: '#4a3000', color: '#e8b96a' },
+};
+
+function setFilter(f, el) {
+  activeFilter = f;
+  activeCat = null;
+  document.querySelectorAll('#filter-area > .chip').forEach(c => c.classList.remove('active','limited-active'));
+  el.classList.add(f === 'limited' ? 'limited-active' : 'active');
+  var sub = document.getElementById('sub-filter-row');
+  if (f === 'limited') {
+    sub.classList.add('open');
+    sub.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  } else {
+    sub.classList.remove('open');
+  }
+  applyFilters();
+}
+
+function setCat(cat, el) {
+  activeCat = activeCat === cat ? null : cat;
+  document.querySelectorAll('#sub-filter-row .chip').forEach(c => c.classList.remove('active'));
+  if (activeCat) el.classList.add('active');
+  applyFilters();
+}
+
+function onSearch() {
+  var val = document.getElementById('search-input').value;
+  document.getElementById('clear-btn').style.display = val ? 'inline' : 'none';
+  applyFilters();
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('clear-btn').style.display = 'none';
+  applyFilters();
+}
+
+function applyFilters() {
+  var q = document.getElementById('search-input').value.toLowerCase().trim();
+  var hasQuery = q.length > 0 || activeFilter !== 'all' || activeCat !== null;
+  var total = 0;
+
+  // Filter regular entries
+  document.querySelectorAll('.entry').forEach(function(e) {
+    var name   = e.dataset.name || '';
+    var email  = e.dataset.email || '';
+    var access = e.dataset.access || '';
+    var status = e.dataset.status || '';
+    var cats   = (e.dataset.cats || '').split(',');
+
+    var matchSearch = !q || name.includes(q) || email.includes(q);
+    var matchFilter = activeFilter === 'all' || access === activeFilter || status === activeFilter;
+    var matchCat    = !activeCat || cats.includes(activeCat);
+    var show = matchSearch && matchFilter && matchCat;
+
+    e.style.display = show ? 'flex' : 'none';
+    if (show) total++;
+
+    var nt = e.querySelector('.name-text');
+    var et = e.querySelector('.email-text');
+    if (show && q) { hlText(nt, q); hlText(et, q); }
+    else { if(nt) nt.innerHTML = nt.textContent; if(et) et.innerHTML = et.textContent; }
+  });
+
+  // Filter request rows — only when user has actively searched/filtered
+  document.querySelectorAll('.req-block').forEach(function(block) {
+    var rows = block.querySelectorAll('.req-row');
+    var visibleRows = 0;
+
+    rows.forEach(function(row) {
+      var name  = row.dataset.name || '';
+      var email = row.dataset.email || '';
+      var access = row.dataset.access || '';
+      var status = row.dataset.status || '';
+
+      var matchSearch = !q || name.includes(q) || email.includes(q);
+      var matchFilter = activeFilter === 'all' || access === activeFilter || status === activeFilter;
+      // Request rows are not filtered by data category (cat sub-filter doesn't apply)
+      var show = !hasQuery || (matchSearch && matchFilter);
+
+      row.style.display = show ? 'flex' : 'none';
+      if (show) { visibleRows++; total++; }
+    });
+
+    // Hide the entire requests block if no rows are visible
+    block.style.display = visibleRows > 0 ? 'block' : 'none';
+  });
+
+  document.getElementById('empty-state').style.display = total === 0 ? 'block' : 'none';
+}
+
+function hlText(el, q) {
+  if (!el) return;
+  var text = el.textContent;
+  var idx = text.toLowerCase().indexOf(q);
+  if (idx === -1) { el.innerHTML = text; return; }
+  el.innerHTML = text.slice(0,idx) + '<span class="highlight">' + text.slice(idx, idx+q.length) + '</span>' + text.slice(idx+q.length);
+}
+
+function toggleSection(id) {
+  var body = document.getElementById(id);
+  var chev = document.getElementById('chev-' + id);
+  var collapsed = body.classList.toggle('collapsed');
+  chev.classList.toggle('closed', collapsed);
+}
+
+function openModal(name, email, catsStr) {
+  var cats = catsStr.split(',');
+  var initial = name.charAt(0).toUpperCase();
+  var colors = avatarColors[initial] || { bg: '#333', color: '#fff' };
+
+  var av = document.getElementById('modal-avatar');
+  av.textContent = initial;
+  av.style.background = colors.bg;
+  av.style.color = colors.color;
+
+  document.getElementById('modal-name').textContent = name + "'s data access";
+  document.getElementById('modal-email').textContent = email + ' · Weekdays only';
+
+  var rows = allCategories.map(function(cat) {
+    var on = cats.includes(cat.key);
+    return '<div class="modal-row">' +
+      '<div class="modal-row-left ' + (on ? 'row-on' : 'row-off') + '">' +
+        '<i class="ti ' + cat.icon + '"></i>' + cat.label +
+      '</div>' +
+      '<i class="ti ' + (on ? 'ti-check check-on' : 'ti-x check-off') + '"></i>' +
+    '</div>';
+  }).join('');
+  document.getElementById('modal-rows').innerHTML = rows;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+applyFilters();
+</script>
+</body>
+</html>
